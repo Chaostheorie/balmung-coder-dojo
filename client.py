@@ -9,7 +9,7 @@ from pygame.locals import *
 
 def fire(x, y):
     """Fires crystal at x and y by next render"""
-    ammo = pygame.image.load("crystal.png")
+    ammo = pygame.image.load("assets/crystal.png")
     surface.blit(ammo, x, y)
 
 
@@ -31,11 +31,11 @@ pygame.font.init()
 distance_wall = config["distance_wall"]
 distance_width = config["display-width"] - distance_wall
 distance_height = config["display-height"] - distance_wall
-image = pygame.image.load("canvas.png")
-meeple1 = pygame.image.load("eyelander.png")
+image = pygame.image.load("assets/canvas.png")
+meeple1 = pygame.image.load("assets/eyelander.png")
 player1_x = 100
 player1_y = 100
-meeple2 = pygame.image.load("Snake.png")
+meeple2 = pygame.image.load("assets/Snake.png")
 player2_x = distance_width
 player2_y = distance_height
 background = pygame.Color(100, 149, 237)
@@ -88,7 +88,7 @@ while True:
                 steps_player2 += 100
             elif event.key == pygame.K_f:
                 # fire(player1_x, player1_y)
-                ammo = pygame.image.load("crystal_th.png")
+                ammo = pygame.image.load("assets/crystal_th.png")
                 ammo_x = player1_x
                 ammo_y = player1_y
                 surface.blit(ammo, (ammo_x, ammo_y))
@@ -110,4 +110,3 @@ while True:
             sys.exit()
     pygame.display.update()
     fpsClock.tick(30)
-
