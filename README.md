@@ -20,6 +20,18 @@ The address of the other player needs to be provided at startup
 If this port is taken on your system you can change the port in `config.json`. This system is a development build and should under no circumstances be used in a live deploy/ server.
 
 
+# Cython Instructions
+
+This is completely cython3 compatible.
+
+Compile with cython3:
+`cython3 --embed --cleanup 1 main.py`
+
+Compile with gcc (may require python3-dev):
+``
+gcc main.c -O2 -Wall `pkg-config --cflags --libs python3` -o  space-mission
+``
+
 # Credits
 
 All works of art belong to their respective creators.

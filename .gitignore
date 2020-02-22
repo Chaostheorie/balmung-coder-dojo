@@ -5,6 +5,11 @@ __pycache__/
 
 # C extensions
 *.so
+*.c
+
+# Compiled
+space-mission
+test*
 
 # Distribution / packaging
 .Python
