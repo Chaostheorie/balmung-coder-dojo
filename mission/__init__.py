@@ -2,7 +2,11 @@ __all__ = ["game", "server", "errors"]
 __doc__ = "Python Space Mission libary"
 
 
-def main():
+def main(run=False):
+    """
+    Main functions for game running
+    Doesn't need to run main loop
+    """
     import pygame
     import logging
     import sys
@@ -35,79 +39,95 @@ def main():
     pygame.init()
     fpsClock = pygame.time.Clock()
     asset_helper = AssetHelper()
-    _ = asset_helper.get_asset  # convenience bind as memory pointer
+    _ = asset_helper.get_asset  # convenience bind
     surface = pygame.display.set_mode((config["display-width"],
                                        config["display-height"]))
+
+    # Set start coords and calculate borders
+    distance_wall = config["distance_wall"]
+    distance_width = config["display-width"] - distance_wall
+    distance_height = config["display-height"] - distance_wall
+    steps_player1 = 0
+    steps_player2 = 0
+    player2 = [0, 0]
+    player1 = [0, 0]  # [x, y]
+
+    # Load assets
+    image = pygame.image.load(_("canvas.png"))
+    meeple1 = pygame.image.load(_("eyelander.png"))
+    meeple2 = pygame.image.load(_("Snake.png"))
+    background = pygame.Color(100, 149, 237)
     pygame.font.init()
+    myfont = pygame.font.SysFont(config["font"], config["font-size"])
 
     # Load background Music
     pygame.mixer.music.load(_("background.mp3"))
     pygame.mixer.music.set_endevent(pygame.USEREVENT)
     pygame.mixer.music.play(-1)
-
-    # server = CoordinateHandler((ip, port)) ip and port of target
-    # Load graphics from /assets
-    distance_wall = config["distance_wall"]
-    distance_width = config["display-width"] - distance_wall
-    distance_height = config["display-height"] - distance_wall
-    image = pygame.image.load(_("canvas.png"))
-    meeple1 = pygame.image.load(_("eyelander.png"))
-    meeple2 = pygame.image.load(_("Snake.png"))
-    player2_x = distance_width
-    player2_y = distance_height
-    background = pygame.Color(100, 149, 237)
-    myfont = pygame.font.SysFont(config["font"], config["font-size"])
-
-    steps_player1 = 0
-    steps_player2 = 0
-    player1_x = 100
-    player1_y = 100
-
+    if not run:
+        return  # returns if run == False
     while True:
+        # Initilize Background and player1
         surface.fill(background)
         surface.blit(image, (0, 0))
-        surface.blit(meeple1, (player1_x, player1_y))
+        surface.blit(meeple1, (*player1))
         textsurface_1 = myfont.render(f"Highscore 1: {steps_player1}",
                                       False, (0, 0, 0))
         textsurface_2 = myfont.render(f"Highscore 2: {steps_player2}",
                                       False, (0, 0, 0))
         surface.blit(textsurface_1, (0, 0))
         surface.blit(textsurface_2, (0, 20))
-        conn.send(player1_x, player1_y)
+
+        # Sends player1 data
+        conn.send(*player1)
+
+        # Gets player 2 data
         data = conn.recv(parse=True)
-        player2_x = data["x"]
-        player2_y = data["y"]
-        surface.blit(meeple2, (player2_x, player2_y))
+        player2 = [data["x"], data["y"]]
+        surface.blit(meeple2, (*player2))
+
+        # Checks for key actions
         for event in pygame.event.get():
-            logging.debug(player1_x, player1_y)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    player1_x = 0
-                    player1_y = 0
-                elif event.key == pygame.K_RIGHT and player1_x < distance_width:
-                    player1_x += 100
+                    player1[0] = 0
+                    player1[1] = 0
+                elif event.key == pygame.K_RIGHT and player1[0] < distance_width:
+                    player1[0] += 100
                     steps_player1 += 100
-                elif event.key == pygame.K_LEFT and player1_x > distance_wall:
-                    player1_x -= 100
+                elif event.key == pygame.K_LEFT and player1[0] > distance_wall:
+                    player1[0] -= 100
                     steps_player1 += 100
-                elif event.key == pygame.K_DOWN and player1_y < distance_height:
-                    player1_y += 100
+                elif event.key == pygame.K_DOWN and player1[1] < distance_height:
+                    player1[1] += 100
                     steps_player1 += 100
-                elif event.key == pygame.K_UP and player1_y > distance_wall:
-                    player1_y -= 100
+                elif event.key == pygame.K_UP and player1[1] > distance_wall:
+                    player1[1] -= 100
                     steps_player1 += 100
                 elif event.key == pygame.K_f:
-                    # fire(player1_x, player1_y)
+                    # fire(*player1)
                     ammo = pygame.image.load(_("crystal_th.png"))
-                    ammo_x = player1_x
-                    ammo_y = player1_y
-                    surface.blit(ammo, (ammo_x, ammo_y))
-                    for y in range(ammo_y, 0, -10):
-                        surface.blit(ammo, (ammo_x, ammo_y))
+                    surface.blit(ammo, (*player1))
+                    for y in range(player1[1], 0, -10):
+                        surface.blit(ammo, (*player1))
                         pygame.display.update()
                         pygame.time.delay(10)
-                env_player1 = ((player1_x-100, player1_y-100), (player1_x, player1_y-100), (player1_x, player1_y+100), (player1_x-100, player1_y))
-                env_player2 = ((player2_x-100, player2_y-100), (player2_x, player2_y-100), (player2_x, player2_y+100), (player2_x-100, player2_y))
+
+                # env player represents the space taken up by the player images
+                env_player1 = ((player1[0]-100, player1[1]-100),
+                               (player1[0], player1[1]-100),
+                               (player1[0], player1[1]+100),
+                               (player1[0]-100, player1[1]))
+                env_player2 = ((player2[0]-100, player2[1]-100),
+                               (player2[0], player2[1]-100),
+                               (player2[0], player2[1]+100),
+                               (player2[0]-100, player2[1]))
+
+                # Positions saved for point calculation
+                player1_last = player1
+                player2_last = player2
+
+                # Checks if players are leaving the window
                 for touch in env_player1:
                     if touch in env_player2:
                         steps_player1 = 0
@@ -120,5 +140,6 @@ def main():
                 logging.info("Gracefull shutdown. Bye ;)")
                 pygame.quit()
                 sys.exit()
+
         pygame.display.update()
         fpsClock.tick(30)

@@ -10,7 +10,7 @@ from socketserver import TCPServer, BaseRequestHandler
 def get_local_ip():
     """
     Gets local ip based on socket
-    Source: https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib"""
+    """
     IP = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]
      if not ip.startswith("127.")][:1], [[(s.connect(("8.8.8.8", 53)),
                                                         s.getsockname()[0],
