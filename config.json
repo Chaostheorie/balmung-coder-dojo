@@ -1,6 +1,11 @@
 {
-  "display-width": 800,
-  "display-height": 700,
-  "distance_wall": 100
+  "pygame": {
+    "display-width": 800,
+    "display-height": 700,
+    "distance_wall": 100,
+    "fps": 30
+  },
+  "SimpleConnector": {
+    "port": 65534
+  }
 }
-
