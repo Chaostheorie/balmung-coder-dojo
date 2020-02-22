@@ -7,14 +7,17 @@ def main():
     import logging
     import sys
     from mission.config import load_config
+    from mission.helpers import AssetHelper
     from mission.server import SimpleConnector
 
     # Load config
     config = load_config(instance="pygame")
 
-    # Initilaze pygame
+    # Initilaze pygame and helper
     pygame.init()
     fpsClock = pygame.time.Clock()
+    asset_helper = AssetHelper()
+    _ = asset_helper.get_asset
     surface = pygame.display.set_mode((config["display-width"],
                                        config["display-height"]))
     pygame.font.init()
@@ -24,13 +27,13 @@ def main():
     distance_wall = config["distance_wall"]
     distance_width = config["display-width"] - distance_wall
     distance_height = config["display-height"] - distance_wall
-    image = pygame.image.load("assets/canvas.png")
-    meeple1 = pygame.image.load("assets/eyelander.png")
-    meeple2 = pygame.image.load("assets/Snake.png")
+    image = pygame.image.load(_("canvas.png"))
+    meeple1 = pygame.image.load(_("eyelander.png"))
+    meeple2 = pygame.image.load(_("Snake.png"))
     player2_x = distance_width
     player2_y = distance_height
     background = pygame.Color(100, 149, 237)
-    myfont = pygame.font.SysFont("arial", 25)
+    myfont = pygame.font.SysFont(config["font"], config["font-size"])
 
     steps_player1 = 0
     steps_player2 = 0
@@ -80,7 +83,7 @@ def main():
                     steps_player2 += 100
                 elif event.key == pygame.K_f:
                     # fire(player1_x, player1_y)
-                    ammo = pygame.image.load("assets/crystal_th.png")
+                    ammo = pygame.image.load(_("crystal_th.png"))
                     ammo_x = player1_x
                     ammo_y = player1_y
                     surface.blit(ammo, (ammo_x, ammo_y))
