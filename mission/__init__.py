@@ -17,7 +17,7 @@ def main():
     modes = {1: "server", 2: "client"}
     number = None
     while number not in modes.keys():
-        print("".join([f"{modes[i+1]} [{i+1}]" for i in range(len(modes))]))
+        print("".join([f"{modes[i+1]} [{i+1}] " for i in range(len(modes))]))
         number = int(input("Mode: "))
 
     mode = modes[number]
