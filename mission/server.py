@@ -44,7 +44,7 @@ class SimpleConnector:
         self.address = address
         self.mode = mode
         self.host = get_local_ip()
-        self.setup(mode)
+        self.setup()
         return
 
     def setup(self):
@@ -71,10 +71,14 @@ class SimpleConnector:
             raise SimpleConnectorError("Accept is not allowed for client mode")
 
     def recv(self, parse=True):
+        if self.mode == "client":
+            data = self.socket.recv(1024).decode()
+        elif self.mode == "server":
+            data = self.conn.recv(1024).decode()
         if parse:
-            return self.parse(self.conn.recv(1024).decode())
+            return self.parse(data)
         else:
-            return self.conn.recv(1024).decode()
+            return data
 
     def is_connected(self):
         """Bind for convenience to connected attribute"""

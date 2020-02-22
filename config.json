@@ -8,7 +8,8 @@
     "distance_wall": 100,
     "fps": 30,
     "font": "arial",
-    "font-size": 25
+    "font-size": 25,
+    "port": 65534
   },
   "SimpleConnector": {
     "port": 65534

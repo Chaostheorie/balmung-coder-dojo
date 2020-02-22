@@ -13,14 +13,37 @@ def main():
     # Load config
     config = load_config(instance="pygame")
 
+    # Asks which mode should be used
+    modes = {1: "server", 2: "client"}
+    number = None
+    while number not in modes.keys():
+        print("".join([f"{modes[i+1]} [{i+1}]" for i in range(len(modes))]))
+        number = int(input("Mode: "))
+
+    mode = modes[number]
+
+    # Initilize SimpleConnector
+    if mode == "client":
+        address = input("IP: ")
+        conn = SimpleConnector(mode=mode, address=(address, config["port"]))
+    else:
+        conn = SimpleConnector(mode=mode)
+        print(f"Waiting for connection ... (IP:{conn.host})")
+        conn.accept()
+
     # Initilaze pygame and helper
     pygame.init()
     fpsClock = pygame.time.Clock()
     asset_helper = AssetHelper()
-    _ = asset_helper.get_asset
+    _ = asset_helper.get_asset  # convenience bind as memory pointer
     surface = pygame.display.set_mode((config["display-width"],
                                        config["display-height"]))
     pygame.font.init()
+
+    # Load background Music
+    pygame.mixer.music.load(_("background.mp3"))
+    pygame.mixer.music.set_endevent(pygame.USEREVENT)
+    pygame.mixer.music.play(-1)
 
     # server = CoordinateHandler((ip, port)) ip and port of target
     # Load graphics from /assets
@@ -44,13 +67,17 @@ def main():
         surface.fill(background)
         surface.blit(image, (0, 0))
         surface.blit(meeple1, (player1_x, player1_y))
-        surface.blit(meeple2, (player2_x, player2_y))
         textsurface_1 = myfont.render(f"Highscore 1: {steps_player1}",
                                       False, (0, 0, 0))
         textsurface_2 = myfont.render(f"Highscore 2: {steps_player2}",
                                       False, (0, 0, 0))
         surface.blit(textsurface_1, (0, 0))
         surface.blit(textsurface_2, (0, 20))
+        conn.send(player1_x, player1_y)
+        data = conn.recv(parse=True)
+        player2_x = data["x"]
+        player2_y = data["y"]
+        surface.blit(meeple2, (player2_x, player2_y))
         for event in pygame.event.get():
             logging.debug(player1_x, player1_y)
             if event.type == pygame.KEYDOWN:
@@ -69,18 +96,6 @@ def main():
                 elif event.key == pygame.K_UP and player1_y > distance_wall:
                     player1_y -= 100
                     steps_player1 += 100
-                if event.key == pygame.K_d and player2_x < distance_width:
-                    player2_x += 100
-                    steps_player2 += 100
-                elif event.key == pygame.K_a and player2_x > distance_wall:
-                    player2_x -= 100
-                    steps_player2 += 100
-                elif event.key == pygame.K_s and player2_y < distance_height:
-                    player2_y += 100
-                    steps_player2 += 100
-                elif event.key == pygame.K_w and player2_y > distance_wall:
-                    player2_y -= 100
-                    steps_player2 += 100
                 elif event.key == pygame.K_f:
                     # fire(player1_x, player1_y)
                     ammo = pygame.image.load(_("crystal_th.png"))
@@ -101,6 +116,8 @@ def main():
                 logging.debug(f"Block Player 1: {env_player1}")
                 logging.debug(f"Block Player 2: {env_player2}")
             if event.type == pygame.QUIT:
+                pygame.mixer.music.fadeout(2)
+                logging.info("Gracefull shutdown. Bye ;)")
                 pygame.quit()
                 sys.exit()
         pygame.display.update()
