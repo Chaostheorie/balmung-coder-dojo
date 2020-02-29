@@ -9,6 +9,7 @@ def main(run=False):
     """
     import pygame
     import logging
+    import asyncio
     import sys
     from mission.config import load_config
     from mission.helpers import AssetHelper
@@ -18,21 +19,29 @@ def main(run=False):
     config = load_config(instance="pygame")
 
     # Asks which mode should be used
-    modes = {1: "server", 2: "client"}
+    modes = {1: "server", 2: "client", 3: "combo", 4: "experimental"}
     number = None
     while number not in modes.keys():
         print("".join([f"{modes[i+1]} [{i+1}] " for i in range(len(modes))]))
-        number = int(input("Mode: "))
+        try:
+            number = int(input("Mode: "))
+        except ValueError:
+            print("That wasn't a valid integer")
 
     mode = modes[number]
 
-    # Initilize SimpleConnector
+    # Initilize mode specific presets
+    address = input("IP: ")
     if mode == "client":
-        address = input("IP: ")
         conn = SimpleConnector(mode=mode, address=(address, config["port"]))
+    elif mode == "combo":
+        pass
+    elif mode == "experimental":
+        from mission.server import CoordinateHandlerClient
+        loop = asyncio.get_event_loop()
+        conn = CoordinateHandlerClient(address, loop=loop)
     else:
-        conn = SimpleConnector(mode=mode)
-        print(f"Waiting for connection ... (IP:{conn.host})")
+        conn = SimpleConnector(mode=mode, listen=2)
         conn.accept()
 
     # Initilaze pygame and helper
@@ -49,7 +58,7 @@ def main(run=False):
     distance_height = config["display-height"] - distance_wall
     steps_player1 = 0
     steps_player2 = 0
-    player2 = [0, 0]
+    player2 = [0, 0]  # [x, y]
     player1 = [0, 0]  # [x, y]
 
     # Load assets
@@ -87,7 +96,7 @@ def main(run=False):
         surface.blit(meeple2, (*player2))
 
         # Checks for key actions
-        for event in pygame.event.get():
+        for event in pygame.event.wait():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player1[0] = 0

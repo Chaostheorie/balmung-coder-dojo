@@ -1,50 +1,25 @@
 import logging
 import socket
-from simplejson.errors import JSONDecodeError
-from json import loads, dumps
+import asyncio
+from ujson import loads, dumps
+from uuid import uuid4
 from mission.errors import SimpleConnectorError
-from mission.config import load_config
-from socketserver import TCPServer, BaseRequestHandler
-
-
-def get_local_ip():
-    """
-    Gets local ip based on socket
-    """
-    IP = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]
-     if not ip.startswith("127.")][:1], [[(s.connect(("8.8.8.8", 53)),
-                                                        s.getsockname()[0],
-                                                        s.close())
-     for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
-    return IP
-
-
-class CoordinateRequestHandler(BaseRequestHandler):
-    def handle(self):
-        return
-
-
-class CoordinateHandler:
-    def __init__(self, address: tuple):
-        """
-        Handler for bidirectional coordinate communication with socketserver
-        address: (ip, port)
-        """
-        self.server = TCPServer((get_local_ip(), 65534),
-                                CoordinateRequestHandler)
-        return
-
-    def send(x, y):
-        """Broadcasts x and y to all connected clients"""
-        return
+from mission.config import load_config, aioload_config
+from mission.helpers import get_local_ip, dump_json, parse_json
 
 
 class SimpleConnector:
-    def __init__(self, address=(), mode="server"):
+    """Designed for one server and one client"""
+    def __init__(self, address=(), mode="server", listen=1,
+                 log_level=logging.INFO):
         self.address = address
         self.mode = mode
+        self.listen = listen
+        self.log = logging.getLogger()
+        logging.basicConfig(level=log_level, filename="space-mission.log")
         self.host = get_local_ip()
         self.setup()
+        self.customize()
         return
 
     def setup(self):
@@ -55,7 +30,7 @@ class SimpleConnector:
 
         if self.mode == "server":
             self.socket.bind((self.host, self.config["port"]))
-            self.socket.listen(1)
+            self.socket.listen(self.listen)
         elif self.mode == "client":
             self.socket.connect(self.address)
             self.connected = True
@@ -69,6 +44,11 @@ class SimpleConnector:
             self.connected = True
         else:
             raise SimpleConnectorError("Accept is not allowed for client mode")
+
+    def auto(self):
+        """Operation mode for background operation with to independend clients"""
+        for i in range(2):
+            self.accept()
 
     def recv(self, parse=True):
         if self.mode == "client":
@@ -91,9 +71,9 @@ class SimpleConnector:
     def _send(self, data):
         """Sends raw data"""
         if self.mode == "server":
-            self.conn.send(data.encode())
+            self.conn.sendall(data.encode())
         elif self.mode == "client":
-            self.socket.sendall(data.encode())
+            self.socket.send(data.encode())
 
     def parse(self, data):
         """parses data to json"""
@@ -101,10 +81,96 @@ class SimpleConnector:
             return None
         try:
             return loads(data)
-        except JSONDecodeError:
-            raise SimpleConnectorError("JSON Data was not porperly transported")
+        except ValueError:
+            raise SimpleConnectorError("JSON was not porperly recieved")
 
     def close(self):
         """Closes connection in both modes"""
         self.conn.close()
         self.connected = False
+
+    def customize(self):
+        """Function executed at the end of __init__ for custom stuff"""
+        return
+
+
+class CoordinateHandler:
+    clients = {}
+    players = {}
+    log = logging.getLogger("CoordinateHandler")
+
+    def __init__(self, loop, address=None, port=None):
+        """
+        Asnychronus game server with basic uuid idnetification
+        """
+        self.address = (address, port)
+        self.loop = asyncio.get_event_loop()
+
+    async def init(self):
+        """Initilize the CoordinateHandler"""
+        await self.load_config()
+        await self.init_connection()
+        return self
+
+    async def load_config(self):
+        """Loads config from config.json (CoordinateHandler)"""
+        self.config = await aioload_config("CoordinateHandler")
+
+    async def init_connection(self):
+        """Startes asyncio network server"""
+        self.factory = asyncio.start_server(self.accept_client, *self.address)
+
+    def client_done(self, task):
+        """Ends connection with the client and removes the task"""
+        client_writer = self.clients[task][1]
+        del self.clients[task]
+        client_writer.close()
+        self.log.info("End Connection")
+
+    async def handle_client(self, reader, writer):
+        """Handles communication with the client"""
+        try:
+            data = await asyncio.wait_for(parse_json(reader), timeout=5)
+        except asyncio.TimeoutError:
+            player = parse_json(reader)
+        uuid = uuid4()
+        dump_json(writer, {"uuid": new_player["uuid"]})
+        self.players[uuid] = player
+        """
+        Idea:
+        Scenario 1:
+        Client -> UUID + Coords
+        Client <- Coords
+        Scenarion 2:
+        Client <- UUID
+        Client -> UUID + Coords
+        Client <- Coords
+        """
+
+
+    async def handle_client_uuid(self, reader, writer):
+        """Handles communication with the client"""
+        # Needs to be implemented
+
+    async def accept_client(self, client_reader, client_writer):
+        """Handles client connection and task managing"""
+        task = asyncio.Task(self.handle_client(client_reader, client_writer))
+        self.clients[task] = (client_reader, client_writer)
+        self.log.info(f"New Connection {task}")
+        task.add_done_callback(self.client_done)
+
+    def run(self):
+        """Runs server factory and loop.run_forever() until KeyboardInterrupt"""
+        self.server = self.loop.run_until_complete(self.factory)
+        try:
+            self.loop.run_forever()
+        except KeyboardInterrupt:
+            self.close()
+
+    async def close(self):
+        [self.client_done(task) for task in self.tasks]
+        return
+
+
+class CoordinateHandlerClient:
+    def __init__(self, host=None, port=None)

@@ -27,10 +27,31 @@ This is completely cython3 compatible.
 Compile with cython3:
 `cython3 --embed --cleanup 1 main.py`
 
-Compile with gcc (may require python3-dev):
+Compile with gcc (may require `python3-dev` and `gcc`):
 ``
 gcc main.c -O2 -Wall `pkg-config --cflags --libs python3` -o  space-mission
 ``
+
+# Asnycio Server
+
+`mission.server.CoordinateHandler` is a network server capable of low level network communication for handling of the coordinations and their distributions for multiple players. A basic asyncio network server is used. The communication will be in JSON (encoded) and handled by `ujson`.
+Scenario 1:
+
+```mermaid
+sequenceDiagram
+Client ->> Server: UUID + Coords
+Server ->> Client: Coords
+```
+
+Scenario 2:
+
+```mermaid
+sequenceDiagram
+Server ->> Client: UUID
+Client ->> Server: UUID + Coords
+Server ->> Client: Coords
+```
+
 
 # Credits
 

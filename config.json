@@ -13,5 +13,13 @@
   },
   "SimpleConnector": {
     "port": 65534
+  },
+  "CoordinateHandler": {
+    "port": 65534,
+    "host": "auto",
+    "listen": 10
+  },
+  "CoordinateHandlerClient": {
+    "port": 65534
   }
 }

@@ -1,7 +1,7 @@
 from os import path
-from json import load, dump
+from json import load, loads, dump
+from aiofile import AIOFile
 from mission.errors import ConfigError
-from simplejson.errors import JSONDecodeError
 
 
 def load_config(instance=None):
@@ -15,7 +15,23 @@ def load_config(instance=None):
                 return load(f)
             else:
                 return load(f)[instance]
-    except JSONDecodeError as e:
+    except ValueError as e:
+        raise ConfigError(f"config.json is not proper JSON ({e})")
+    except KeyError:
+        raise ConfigError(f"instance {instance} was not found in config.json")
+
+
+async def aioload_config(instance=None):
+    """Loads config from config.json with aiofile.AIOFile"""
+    if not path.exists("config.json"):
+        raise ConfigError("config.json was not found in local directory")
+    try:
+        async with AIOFile("config.json", "r") as afp:
+            if instance is None:
+                return loads(await afp.read())
+            else:
+                return loads(await afp.read())[instance]
+    except ValueError as e:
         raise ConfigError(f"config.json is not proper JSON ({e})")
     except KeyError:
         raise ConfigError(f"instance {instance} was not found in config.json")
@@ -34,5 +50,5 @@ def write_config(config, instance=None):
                 conf = load_config()
                 conf["instance"] = config
                 return dump(f, conf)
-    except JSONDecodeError as e:
+    except ValueError as e:
         raise ConfigError(f"config.json is not proper JSON ({e})")
