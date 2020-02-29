@@ -35,6 +35,7 @@ gcc main.c -O2 -Wall `pkg-config --cflags --libs python3` -o  space-mission
 # Asnycio Server
 
 `mission.server.CoordinateHandler` is a network server capable of low level network communication for handling of the coordinations and their distributions for multiple players. A basic asyncio network server is used. The communication will be in JSON (encoded) and handled by `ujson`.
+
 Scenario 1:
 
 [![](https://mermaid.ink/img/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG5DbGllbnQgLT4-IFNlcnZlcjogVVVJRCArIENvb3Jkc1xuU2VydmVyIC0-PiBDbGllbnQ6IENvb3Jkc1x0XHRcdFx0IiwibWVybWFpZCI6eyJ0aGVtZSI6ImZvcmVzdCJ9fQ)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG5DbGllbnQgLT4-IFNlcnZlcjogVVVJRCArIENvb3Jkc1xuU2VydmVyIC0-PiBDbGllbnQ6IENvb3Jkc1x0XHRcdFx0IiwibWVybWFpZCI6eyJ0aGVtZSI6ImZvcmVzdCJ9fQ)
